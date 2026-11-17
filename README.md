@@ -15,3 +15,8 @@ An enterprise-grade, multi-tier automation ecosystem built with **FastAPI**, **P
    docker compose up -d --build
    ```
 3. Access API documentation at `http://localhost/docs`.
+
+## Native iOS Client
+This backend ecosystem pairs with a native **SwiftUI iOS Command Center** featuring Keychain JWT persistence, real-time PostgreSQL task sync, and conversational control over the n8n + Gemini AI Agent:
+
+📱 **iOS Repository:** [ai-agent-command-center-ios](https://github.com)
