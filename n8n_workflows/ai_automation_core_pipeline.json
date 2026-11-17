@@ -1,0 +1,262 @@
+{
+  "name": "AI Automation Core Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://backend:8000/api/v1/auth/login",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "username",
+              "value": "admin@example.com"
+            },
+            {
+              "name": "password",
+              "value": "secret123"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -48,
+        0
+      ],
+      "id": "3dd02f42-7a3a-4b55-9b06-35f129351ec6",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "agent-command",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "position": [
+        -272,
+        0
+      ],
+      "id": "bef2eb4a-9ffc-4057-a40a-3bd37bd6ac2d",
+      "name": "Webhook",
+      "webhookId": "b40faf19-e4e7-473d-88bd-bcd2143fb444"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Webhook').item.json.body.prompt }}",
+        "options": {
+          "systemMessage": "You are an autonomous operations orchestrator. Analyze the user's request and use the create_automation_task tool to queue the appropriate job in the backend. Valid agent_type values are strictly 'RAG_Search' or 'Data_Extraction'. Data_Extraction requires priority 3 or higher. Always summarize the created task ID and status in your final response.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        176,
+        0
+      ],
+      "id": "69a53d0f-844d-49fc-953d-0c9dbb141383",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Creates a new automation task in the FastAPI backend. Requires title (string), agent_type ('RAG_Search' or 'Data_Extraction'), and priority (integer 1-5).",
+        "method": "POST",
+        "url": "http://backend:8000/api/v1/tasks",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('HTTP Request').item.json.access_token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"title\": \"{{ $fromAI('title', 'Short descriptive title for the task', 'string') }}\",\n  \"agent_type\": \"{{ $fromAI('agent_type', 'Must be strictly RAG_Search or Data_Extraction', 'string') }}\",\n  \"priority\": {{ $fromAI('priority', 'Priority integer between 1 and 5', 'number') }},\n  \"payload_data\": {\n    \"created_by\": \"autonomous_n8n_agent\"\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.5,
+      "position": [
+        368,
+        224
+      ],
+      "id": "b48a4abf-3a1a-4113-b03f-a3f010ed48f8",
+      "name": "create_automation_task"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        544,
+        0
+      ],
+      "id": "504daafa-e84f-4ab1-af2e-a65497957e4a",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        48,
+        208
+      ],
+      "id": "7784289f-9e0b-4e03-b3ab-405a81016a16",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "hOZNtHdZt6sQKWbt",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Fetches the list of all existing automation tasks and their current statuses from the PostgreSQL database.",
+        "url": "http://backend:8000/api/v1/tasks",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('HTTP Request').item.json.access_token }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.5,
+      "position": [
+        560,
+        240
+      ],
+      "id": "3df19840-12c2-4385-8a64-46c140553f5f",
+      "name": "list_automation_tasks"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Webhook').item.json.body.session_id || 'default-session' }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        208,
+        224
+      ],
+      "id": "5569a69f-f6aa-4433-a393-952a66f16882",
+      "name": "Simple Memory"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "create_automation_task": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "list_automation_tasks": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "2caa6cec-25cc-4c8c-8624-d5d844f747a8",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a8c7299a31176cae970f63042efe6824d468b01b8db752bbdc94dfd0baa6558f"
+  },
+  "nodeGroups": [],
+  "id": "Tu7lspb42EQn5IvL",
+  "tags": []
+}
