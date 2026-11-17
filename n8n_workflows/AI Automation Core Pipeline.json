@@ -52,7 +52,7 @@
         "promptType": "define",
         "text": "={{ $('Webhook').item.json.body.prompt }}",
         "options": {
-          "systemMessage": "You are an autonomous operations orchestrator. Analyze the user's request and use the create_automation_task tool to queue the appropriate job in the backend. Valid agent_type values are strictly 'RAG_Search' or 'Data_Extraction'. Data_Extraction requires priority 3 or higher. Always summarize the created task ID and status in your final response.\n"
+          "systemMessage": "You are an autonomous operations orchestrator. Analyze the user's request and use the create_automation_task tool to queue the appropriate job in the backend. Valid agent_type values are strictly 'RAG_Search' or 'Data_Extraction'. Data_Extraction requires priority 3 or higher. Always summarize the created task ID and status in your final response.\n\nWhen updating or deleting a task, always call the list tasks tool first to look up its exact task_id, current status, and current priority. When calling the update task tool, always pass both status and priority—keeping the existing priority or status from list tasks for whichever field the user did not ask to change.\n\n"
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
@@ -86,8 +86,8 @@
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.5,
       "position": [
-        368,
-        224
+        336,
+        304
       ],
       "id": "b48a4abf-3a1a-4113-b03f-a3f010ed48f8",
       "name": "create_automation_task"
@@ -145,8 +145,8 @@
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.5,
       "position": [
-        560,
-        240
+        704,
+        304
       ],
       "id": "3df19840-12c2-4385-8a64-46c140553f5f",
       "name": "list_automation_tasks"
@@ -164,6 +164,59 @@
       ],
       "id": "5569a69f-f6aa-4433-a393-952a66f16882",
       "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Updates an existing task's status, title, or priority using its task_id. Always call list_tasks first if you do not know the exact task_id.",
+        "method": "PATCH",
+        "url": "=http://backend:8000/api/v1/tasks/{{ $fromAI(\"task_id\", \"The unique string ID of the task to update\", \"string\") }}\n",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('HTTP Request').item.json.access_token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"status\": \"{{ $fromAI('status', 'The updated task status such as queued, in_progress, completed, or failed', 'string') }}\",\n  \"priority\": {{ $fromAI('priority', 'The integer priority level of the task', 'number') }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.5,
+      "position": [
+        640,
+        176
+      ],
+      "id": "da690579-18a6-4731-af8f-149439fa4e7d",
+      "name": "update_task"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Permanently deletes an automation task using its task_id. Always call the list tasks tool first to get the exact task_id before deleting.",
+        "method": "DELETE",
+        "url": "=http://backend:8000/api/v1/tasks/{{ $fromAI(\"task_id\", \"The unique string ID of the task to delete\", \"string\") }}\n",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('HTTP Request').item.json.access_token }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.5,
+      "position": [
+        480,
+        192
+      ],
+      "id": "52d3d17c-487b-4ed1-9566-1e6f557dd222",
+      "name": "delete_task"
     }
   ],
   "pinData": {},
@@ -244,6 +297,28 @@
           }
         ]
       ]
+    },
+    "update_task": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "delete_task": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
@@ -251,7 +326,7 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "2caa6cec-25cc-4c8c-8624-d5d844f747a8",
+  "versionId": "c9e51be2-08ca-4386-a00e-8ea9cd9f0fdc",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "a8c7299a31176cae970f63042efe6824d468b01b8db752bbdc94dfd0baa6558f"
