@@ -26,6 +26,16 @@ An enterprise-grade automation ecosystem built with **FastAPI**, **PostgreSQL**,
 +----------------------------------------+
 ```
 
+### Visual Architecture & Gateway Preview
+
+#### 1. Autonomous CRUD Agent Pipeline (n8n + Google Gemini)
+![n8n Autonomous CRUD Agent](docs/screenshots/n8n-workflow.png)
+
+#### 2. FastAPI Secured Gateway & Full-CRUD Endpoints
+
+| OAuth2 JWT Authentication & Health | Automation Engine (Full CRUD Routes) |
+| :---: | :---: |
+| <img src="docs/screenshots/fastapi-auth-gateway.png" width="420"> | <img src="docs/screenshots/fastapi-crud-endpoints.png" width="420"> |
 ### Core Components
 * **Gateway (`nginx:alpine`):** Routes `/api/*` traffic to FastAPI and `/webhook/*` requests to n8n on Port 80.
 * **API Core (`FastAPI + SQLModel`):** Asynchronous REST API with OAuth2 JWT Bearer authentication, OpenAPI/Swagger docs, and Pydantic v2 schema validation.
