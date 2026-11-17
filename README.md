@@ -9,12 +9,14 @@ An enterprise-grade, multi-tier automation ecosystem built with **FastAPI**, **P
 - **Agentic Orchestrator (`n8n`):** Autonomous webhook-driven AI agent with window buffer memory and dynamic HTTP tool-calling into FastAPI.
 
 ## Quick Start (< 60 Seconds)
+
 1. Clone the repository and configure your `.env` secrets file.
-2. Launch the full stack:
+2. Launch the full stack (or run `./start-dev.sh` on macOS):
    ```bash
    docker compose up -d --build
    ```
-3. Access API documentation at `http://localhost/docs`.
+3. Access **FastAPI Swagger UI** at `http://localhost/docs`.
+4. Access the **n8n Agent Orchestrator** at `http://localhost:5678`, import the workflow JSON from `n8n_workflows/`, add your Google Gemini API key, and toggle the workflow **Active**.
 
 ## Native iOS Client
 This backend ecosystem pairs with a native **SwiftUI iOS Command Center** featuring Keychain JWT persistence, real-time PostgreSQL task sync, and conversational control over the n8n + Gemini AI Agent:
